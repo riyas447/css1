@@ -16,8 +16,8 @@ app.get('/', (req, res) => {
 
 // 🔴 SPAMHAUS INTEL API CREDENTIALS
 const SPAMHAUS_CONFIG = {
-  username: "rnlhyavy@92190379",
-  password: "qmyaPA1n>=eF8p6C", // 👈 உங்கள் உண்மையான Passcode போடவும்
+  username: "crnkdcmi@92190379",
+  password: "S)civAy744vKkah^", // 👈 உங்கள் உண்மையான Passcode போடவும்
   realm: "intel"
 };
 
