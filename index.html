@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spamhaus Official API Bulk Checker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafb; }
+    .bg-teal-spamhaus { background-color: #00b887; }
+    .bg-teal-spamhaus:hover { background-color: #00a075; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-5 flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Spamhaus Reputation Checker</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Authenticated via Spamhaus Intel REST API</p>
+      </div>
+      <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono text-slate-700">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Account: rnlhyavy@92190379</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      <!-- Left Input Panel -->
+      <section class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Bulk IP Lookup</h2>
+          <p class="text-xs text-slate-500 mt-1">Paste IPv4 addresses or CIDR ranges below (One per line):</p>
+        </div>
+
+        <textarea id="ipInputArea" rows="10" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="85.204.182.202&#10;85.204.182.203"></textarea>
+
+        <button onclick="checkBulkIPs()" id="btnCheck" class="w-full bg-teal-spamhaus text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition flex justify-center items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-xs"></i>
+          <span id="btnText">Check Live Status</span>
+        </button>
+      </section>
+
+      <!-- Right Results Table Panel -->
+      <section class="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+        
+        <div class="flex items-center space-x-6 text-sm font-semibold pb-3 border-b border-slate-200">
+          <div><span id="cntScanned" class="text-slate-900 font-mono">0</span> <span class="text-slate-400 font-normal">Scanned</span></div>
+          <div><span id="cntClean" class="text-emerald-600 font-mono">0</span> <span class="text-slate-400 font-normal">Clean</span></div>
+          <div><span id="cntListed" class="text-rose-600 font-mono">0</span> <span class="text-slate-400 font-normal">Listed</span></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr class="text-xs font-semibold text-slate-400 border-b border-slate-200">
+                <th class="pb-3">IP Address</th>
+                <th class="pb-3">Official Result Page</th>
+                <th class="pb-3 text-right">Intel API Listing Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody" class="divide-y divide-slate-100 text-sm font-mono">
+              <tr>
+                <td colspan="3" class="py-10 text-center text-slate-400 font-sans">
+                  Paste IP addresses and click "Check Live Status"
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    async function checkBulkIPs() {
+      const text = document.getElementById('ipInputArea').value;
+      const ips = text.split(/[\n,\s;]+/).map(i => i.trim()).filter(i => i !== '');
+
+      if (ips.length === 0) {
+        alert("Please enter at least one valid IP address.");
+        return;
+      }
+
+      const btn = document.getElementById('btnCheck');
+      const btnText = document.getElementById('btnText');
+      btn.disabled = true;
+      btnText.innerText = "Querying Spamhaus API...";
+
+      try {
+        const response = await fetch('/api/check-bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ips })
+        });
+
+        const data = await response.json();
+        renderTable(data.results || []);
+
+      } catch (err) {
+        alert("Server Connection Failed. Please ensure app.js is running.");
+      } finally {
+        btn.disabled = false;
+        btnText.innerText = "Check Live Status";
+      }
+    }
+
+    function renderTable(results) {
+      const tbody = document.getElementById('resultsTableBody');
+      const total = results.length;
+      const listedCount = results.filter(r => r.isListed).length;
+
+      document.getElementById('cntScanned').innerText = total;
+      document.getElementById('cntClean').innerText = total - listedCount;
+      document.getElementById('cntListed').innerText = listedCount;
+
+      tbody.innerHTML = results.map(r => {
+        const statusBadge = r.isListed 
+          ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1 rounded-full text-xs font-bold">✕ ${r.status}</span>`
+          : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold">✓ Not listed</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3.5 font-bold text-slate-800">${r.ip}</td>
+            <td class="py-3.5 text-xs">
+              <a href="${r.url}" target="_blank" class="text-teal-600 hover:underline inline-flex items-center gap-1 font-sans font-medium">
+                <span>View Spamhaus Page</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+              </a>
+            </td>
+            <td class="py-3.5 text-right">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  </script>
+
+</body>
+</html>
