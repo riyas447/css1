@@ -17,8 +17,8 @@ app.get('/', (req, res) => {
 
 // 🔴 YOUR SPAMHAUS CREDENTIALS (ENTER REAL PASSWORD HERE)
 const SPAMHAUS_CONFIG = {
-  username: "crnkdcmi@92190379",
-  password: "S)civAy744vKkah^", // 👈 Unga Real Spamhaus Password Inga Podunga
+  username: "kerlgtxr@81302263",
+  password: "2Bfr5MWJxzA[bmPJ", // 👈 Unga Real Spamhaus Password Inga Podunga
   realm: "intel"
 };
 
